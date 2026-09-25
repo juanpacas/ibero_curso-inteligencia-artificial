@@ -1,8 +1,10 @@
 import heapq
 import math
+import time  # <--- 1. Importar el módulo time
+import argparse
+import sys
 
-# --- 1. BASE DE CONOCIMIENTO (Reglas de Conexión del Transporte) ---
-# Formato: Origen -> [(Destino, Tiempo_en_minutos, Linea_o_Modo)]
+# --- BASE DE CONOCIMIENTO Y COORDENADAS ---
 BASE_CONOCIMIENTO = {
     'Estacion_A': [('Estacion_B', 5, 'Ruta 1'), ('Estacion_C', 10, 'Ruta 2')],
     'Estacion_B': [('Estacion_A', 5, 'Ruta 1'), ('Estacion_D', 4, 'Ruta 1'), ('Estacion_E', 8, 'Ruta 3')],
@@ -12,7 +14,6 @@ BASE_CONOCIMIENTO = {
     'Estacion_F': [('Estacion_D', 6, 'Ruta 1'), ('Estacion_E', 2, 'Ruta 3')]
 }
 
-# Coordenadas relativas (x, y) para calcular la Heurística h(n)
 COORDENADAS = {
     'Estacion_A': (0, 0),
     'Estacion_B': (2, 3),
@@ -22,16 +23,12 @@ COORDENADAS = {
     'Estacion_F': (10, 8)
 }
 
-# --- 2. FUNCIÓN HEURÍSTICA h(n) ---
 def heuristica(estacion_actual, estacion_destino):
     x1, y1 = COORDENADAS[estacion_actual]
     x2, y2 = COORDENADAS[estacion_destino]
-    # Distancia Euclidiana directa entre coordenadas
     return math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
 
-# --- 3. ALGORITMO A* PARA LA MEJOR RUTA ---
 def buscar_mejor_ruta(inicio, destino):
-    # Lista de prioridad para evaluar los nodos: (f_score, costo_g, nodo_actual, camino)
     cola_prioridad = [(0, 0, inicio, [inicio])]
     visitados = set()
 
@@ -45,7 +42,6 @@ def buscar_mejor_ruta(inicio, destino):
             continue
         visitados.add(actual)
 
-        # Regla de inferencia: explorar conexiones desde la base de conocimiento
         for vecino, tiempo, linea in BASE_CONOCIMIENTO.get(actual, []):
             if vecino not in visitados:
                 nuevo_g = g_score + tiempo
@@ -55,13 +51,34 @@ def buscar_mejor_ruta(inicio, destino):
 
     return None, float('inf')
 
-# --- 4. EJECUCIÓN DEL SISTEMA ---
 if __name__ == "__main__":
-    origen = 'Estacion_A'
-    meta = 'Estacion_F'
+    parser = argparse.ArgumentParser(description="Sistema Inteligente de Transporte Masivo - Algoritmo A*")
+    parser.add_argument('--origen', type=str, default='Estacion_A', help='Estación de partida')
+    parser.add_argument('--destino', type=str, default='Estacion_F', help='Estación de llegada')
+    
+    args = parser.parse_args()
+    origen = args.origen
+    meta = args.destino
+
+    # --- 2. MEDIR TIEMPO DE EJECUCIÓN ---
+    inicio_tiempo = time.perf_counter()  # Marca de tiempo de inicio
     
     ruta, tiempo_total = buscar_mejor_ruta(origen, meta)
     
-    print(f"--- MEJOR RUTA DE {origen} A {meta} ---")
-    print(f"Ruta encontrada: {' -> '.join(ruta)}")
-    print(f"Tiempo total estimado: {tiempo_total} minutos")
+    fin_tiempo = time.perf_counter()    # Marca de tiempo de fin
+    
+    tiempo_ejecucion_ms = (fin_tiempo - inicio_tiempo) * 1000  # Convertir a milisegundos
+
+    # --- 3. MOSTRAR RESULTADOS ---
+    if ruta:
+        print(f"\n==========================================")
+        print(f" MEJOR RUTA ENCONTRADA (Algoritmo A*)")
+        print(f"==========================================")
+        print(f" Origen:            {origen}")
+        print(f" Destino:           {meta}")
+        print(f" Ruta:              {' -> '.join(ruta)}")
+        print(f" Tiempo del viaje:  {tiempo_total} minutos")
+        print(f" Tiempo algoritmo:  {tiempo_ejecucion_ms:.4f} ms")
+        print(f"==========================================\n")
+    else:
+        print(f"No se encontró una ruta válida entre {origen} y {meta}.")
